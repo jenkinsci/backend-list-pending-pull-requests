@@ -52,7 +52,7 @@ public class Main {
         List<GHPullRequest> r = gitHub.getOrganization("jenkinsci").getPullRequests();
         Collections.sort(r, new Comparator<GHPullRequest>() {
             public int compare(GHPullRequest lhs, GHPullRequest rhs) {
-                return lhs.getIssueUpdatedAt().compareTo(rhs.getIssueUpdatedAt());
+                return lhs.getCreatedAt().compareTo(rhs.getCreatedAt());
             }
         });
         return r;
@@ -62,19 +62,25 @@ public class Main {
         ByteArrayOutputStream page = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(page,true);
 
-        final long now = new Date().getTime();
+        final Date now = new Date();
         IOUtils.copy(Main.class.getResourceAsStream("preamble.txt"), page);
         for (GHPullRequest p : r) {
-            final long days = TimeUnit.MILLISECONDS.toDays(now - p.getIssueUpdatedAt().getTime());
-            boolean highlight = days > 14;
-            out.printf("|%30s|%20s|%5s|%s\n",
+            final long daysSinceCreation = daysBetween(now, p.getCreatedAt());
+            final long daysSinceUpdate = daysBetween(now, p.getIssueUpdatedAt());
+            boolean highlight = daysSinceCreation > 14;
+            out.printf("|%30s|%20s|%5s|%5s|%s\n",
                     format(p.getRepository().getName(),highlight),
                     format(p.getUser().getLogin(),highlight),
-                    format(String.valueOf(days),highlight),
+                    format(String.valueOf(daysSinceCreation),highlight),
+                    format(String.valueOf(daysSinceUpdate),highlight),
                     format("[" + escape(p.getTitle()) + "|" + p.getUrl() + "]", highlight));
         }
         out.close();
         return page;
+    }
+    
+    private static long daysBetween(Date day1, Date day2) {
+        return TimeUnit.MILLISECONDS.toDays(day1.getTime() - day2.getTime());
     }
 
     private static Credentials loadWikiCredentials() throws IOException {
