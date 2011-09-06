@@ -52,7 +52,7 @@ public class Main {
         List<GHPullRequest> r = gitHub.getOrganization("jenkinsci").getPullRequests();
         Collections.sort(r, new Comparator<GHPullRequest>() {
             public int compare(GHPullRequest lhs, GHPullRequest rhs) {
-                return lhs.getUpdatedAt().compareTo(rhs.getUpdatedAt());
+                return lhs.getIssueUpdatedAt().compareTo(rhs.getIssueUpdatedAt());
             }
         });
         return r;
@@ -65,7 +65,7 @@ public class Main {
         final long now = new Date().getTime();
         IOUtils.copy(Main.class.getResourceAsStream("preamble.txt"), page);
         for (GHPullRequest p : r) {
-            final long days = TimeUnit.MILLISECONDS.toDays(now - p.getUpdatedAt().getTime());
+            final long days = TimeUnit.MILLISECONDS.toDays(now - p.getIssueUpdatedAt().getTime());
             boolean highlight = days > 14;
             out.printf("|%30s|%20s|%5s|%s\n",
                     format(p.getRepository().getName(),highlight),
