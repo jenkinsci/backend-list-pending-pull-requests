@@ -25,16 +25,40 @@ import java.util.concurrent.TimeUnit;
  * @author Kohsuke Kawaguchi
  */
 public class Main {
-    public static void main(String[] args) throws IOException, ServiceException {
-        GitHub gitHub = GitHub.connect();
+    private static class Credentials {
+        private String username;
+        private String password;
 
+        Credentials(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+    }
+
+    public static void main(String[] args) throws IOException, ServiceException {
+        List<GHPullRequest> r = retrieveGitHubPullRequestsOldestFirst();
+
+        ByteArrayOutputStream pageContent = toWikiPage(r);
+
+        System.out.write(pageContent.toByteArray());
+
+        Credentials credentials = loadWikiCredentials();
+
+        writePendingPullRequestsWikiPage(credentials, pageContent);
+    }
+
+    private static List<GHPullRequest> retrieveGitHubPullRequestsOldestFirst() throws IOException {
+        GitHub gitHub = GitHub.connect();
         List<GHPullRequest> r = gitHub.getOrganization("jenkinsci").getPullRequests();
         Collections.sort(r, new Comparator<GHPullRequest>() {
             public int compare(GHPullRequest lhs, GHPullRequest rhs) {
                 return lhs.getUpdatedAt().compareTo(rhs.getUpdatedAt());
             }
         });
+        return r;
+    }
 
+    private static ByteArrayOutputStream toWikiPage(List<GHPullRequest> r) throws IOException {
         ByteArrayOutputStream page = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(page,true);
 
@@ -50,16 +74,23 @@ public class Main {
                     format("[" + escape(p.getTitle()) + "|" + p.getUrl() + "]", highlight));
         }
         out.close();
-        System.out.write(page.toByteArray());
+        return page;
+    }
 
-        ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
-
-        Properties props = new Properties();
+    private static Credentials loadWikiCredentials() throws IOException {
         File credential = new File(new File(System.getProperty("user.home")), ".jenkins-ci.org");
         if (!credential.exists())
             throw new IOException("You need to have userName and password in "+credential);
+
+        Properties props = new Properties();
         props.load(new FileInputStream(credential));
-        String token = service.login(props.getProperty("userName"),props.getProperty("password"));
+        return new Credentials(props.getProperty("userName"), props.getProperty("password"));
+    }
+
+
+    private static void writePendingPullRequestsWikiPage(Credentials creds, ByteArrayOutputStream page) throws ServiceException, IOException {
+        ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
+        String token = service.login(creds.username, creds.password);
 
         RemotePage p = service.getPage(token, "JENKINS", "Pending Pull Requests");
         p.setContent(page.toString());
