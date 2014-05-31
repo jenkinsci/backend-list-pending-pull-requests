@@ -91,11 +91,20 @@ public class Main {
         IOUtils.copy(Main.class.getResourceAsStream("unattended.txt"), page);
         for (GHPullRequest p : r) {
             final long daysSinceCreation = daysBetween(now, p.getCreatedAt());
-            final long daysSinceUpdate = daysBetween(now, p.getIssueUpdatedAt());
+            final long daysSinceUpdate = daysBetween(now, p.getUpdatedAt());
             boolean highlight = daysSinceCreation > 14;
+            if (p==null || p.getRepository()==null || p.getUrl()==null)
+                System.out.println(p);
+
+            String userName;
+            if (p.getUser()==null)
+                userName = "-";
+            else
+                userName = p.getUser().getLogin();
+
             out.printf("|%30s|%20s|%5s|%5s|%s\n",
                     format(p.getRepository().getName(),highlight),
-                    format(p.getUser().getLogin(),highlight),
+                    format(userName,highlight),
                     format(String.valueOf(daysSinceCreation),highlight),
                     format(String.valueOf(daysSinceUpdate),highlight),
                     format("[" + escape(p.getTitle()) + "|" + p.getUrl() + "]", highlight));
