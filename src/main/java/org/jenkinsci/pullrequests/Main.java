@@ -14,10 +14,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -60,12 +63,32 @@ public class Main {
         return r;
     }
 
+    private static List<Repository> groupByRepositories(List<GHPullRequest> prs) {
+        Map<String,Repository> r = new HashMap<String, Repository>();
+        for (GHPullRequest pr : prs) {
+            String name = pr.getRepository().getName();
+            Repository v = r.get(name);
+            if (v==null)
+                r.put(name,v=new Repository(name));
+            v.count++;
+        }
+
+        List<Repository> list = new ArrayList<Repository>(r.values());
+        Collections.sort(list);
+        return list;
+    }
+
     private static ByteArrayOutputStream toWikiPage(List<GHPullRequest> r) throws IOException {
         ByteArrayOutputStream page = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(page,true);
 
+        IOUtils.copy(Main.class.getResourceAsStream("byRepo.txt"), page);
+        for (Repository repo : groupByRepositories(r)) {
+            out.printf("|%30s|%4s|\n", repo.name, repo.count);
+        }
+
         final Date now = new Date();
-        IOUtils.copy(Main.class.getResourceAsStream("preamble.txt"), page);
+        IOUtils.copy(Main.class.getResourceAsStream("unattended.txt"), page);
         for (GHPullRequest p : r) {
             final long daysSinceCreation = daysBetween(now, p.getCreatedAt());
             final long daysSinceUpdate = daysBetween(now, p.getIssueUpdatedAt());

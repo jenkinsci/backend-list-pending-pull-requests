@@ -1,0 +1,4 @@
+h1.Pending Pull Requests by Repository
+This table lists the number of open pull requests by their count.
+
+||Repository||Count||
