@@ -84,7 +84,8 @@ public class Main {
 
         IOUtils.copy(Main.class.getResourceAsStream("byRepo.txt"), page);
         for (Repository repo : groupByRepositories(r)) {
-            out.printf("|%30s|%4s|\n", repo.name, repo.count);
+            String link = String.format("[%1$s|https://github.com/jenkinsci/%1$s/pulls]", repo.name);
+            out.printf("|%60s|%4s|\n", link, repo.count);
         }
 
         final Date now = new Date();
