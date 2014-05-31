@@ -43,9 +43,9 @@ public class Main {
     public static void main(String[] args) throws IOException, ServiceException {
         List<GHPullRequest> r = retrieveGitHubPullRequestsOldestFirst();
 
-        ByteArrayOutputStream pageContent = toWikiPage(r);
+        String pageContent = toWikiPage(r);
 
-        System.out.write(pageContent.toByteArray());
+        System.out.println(pageContent);
 
         Credentials credentials = loadWikiCredentials();
 
@@ -78,7 +78,7 @@ public class Main {
         return list;
     }
 
-    private static ByteArrayOutputStream toWikiPage(List<GHPullRequest> r) throws IOException {
+    private static String toWikiPage(List<GHPullRequest> r) throws IOException {
         ByteArrayOutputStream page = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(page,true);
 
@@ -101,7 +101,7 @@ public class Main {
                     format("[" + escape(p.getTitle()) + "|" + p.getUrl() + "]", highlight));
         }
         out.close();
-        return page;
+        return page.toString();
     }
     
     private static long daysBetween(Date day1, Date day2) {
@@ -119,12 +119,12 @@ public class Main {
     }
 
 
-    private static void writePendingPullRequestsWikiPage(Credentials creds, ByteArrayOutputStream page) throws ServiceException, IOException {
+    private static void writePendingPullRequestsWikiPage(Credentials creds, String page) throws ServiceException, IOException {
         ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
         String token = service.login(creds.username, creds.password);
 
         RemotePage p = service.getPage(token, "JENKINS", "Pending Pull Requests");
-        p.setContent(page.toString());
+        p.setContent(page);
         service.storePage(token,p);
     }
 
