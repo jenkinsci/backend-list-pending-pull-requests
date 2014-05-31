@@ -22,6 +22,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Generates https://wiki.jenkins-ci.org/display/JENKINS/Pending+Pull+Requests
+ *
  * @author Kohsuke Kawaguchi
  */
 public class Main {
